@@ -1,0 +1,299 @@
+﻿
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head >
+    <title>cars</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        form {
+            border: 3px solid #f1f1f1;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        #txt_error {
+            color: red
+        }
+
+        .cnbtn {
+            background-color: #ec3f3f;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 49%;
+        }
+
+        .lgnbtn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 50%;
+        }
+
+        .imgcontainer {
+            text-align: center;
+            margin: 24px 0 12px 0;
+        }
+
+        img.avatar {
+            width: 40%;
+            border-radius: 50%;
+        }
+
+        .container {
+            padding: 16px;
+        }
+
+        span.psw {
+            float: right;
+            padding-top: 16px;
+        }
+        /* Change styles for span and cancel button on extra small screens */
+        @media screen and (max-width: 300px) {
+            span.psw {
+                display: block;
+                float: none;
+            }
+
+            .cnbtn {
+                width: 100%;
+            }
+        }
+
+        .frmalg {
+            width: 100%;
+        }
+
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px auto;
+            border: 3px solid #f1f1f1;
+        }
+
+        tr, td, th {
+            text-align: left;
+            padding: 18px;
+        }
+
+            tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+
+        .mainC {
+            display: flex;
+            background-color: red;
+        }
+
+        .abc {
+            position: fixed;
+            bottom: -150px;
+            width: 100%;
+            left: 0;
+        }
+        .lgnbtn{
+            display:inline-block;
+            text-align:center;
+            margin:10px;
+            width:30%;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <form id="form1"  class="frmalg">
+            <div class="container">
+                <h3>Available Cars</h3>
+                
+                <select id="select1"></select>
+                <button id="rentBtn">Rent this car</button>
+
+                <input type="button" id="btn_logout" Class="lgnbtn" value="Logout" />
+            </div>
+            <table id="cars" class="table-striped">
+                <tr>
+                   <th>id</th> 
+                   <th>Name</th> 
+                   <th></th>                    
+                </tr>
+            </table>
+        </form>
+    </div>
+
+
+
+    <script>
+        let cars = document.getElementById("cars");
+        const id = localStorage.getItem("id");
+        let select1 = document.getElementById("select1");
+        let addcar = document.getElementById("rentBtn");
+
+        let logout = document.getElementById("btn_logout");
+
+
+        let mycars = [];
+
+
+        (async function main() {
+            try {
+                let rentedCars = [];
+                let url = 'https://localhost:44330/api/car?userid=' + id;
+                let response = await fetch(url, {
+                    method: "GET",
+                });
+
+                if (!response.ok) {
+                    alert("invalid credentials");
+                    throw new Error("Invalid Credentials");
+                }
+                let data = await response.json(); // read response body and parse as JSON
+
+                //console.log(data);
+                rentedCars = data;
+                rentedCars.forEach(car => {
+                    cars.innerHTML += `
+
+                            <tr>
+                                <td> ${car.Id} </td>
+                                <td> ${car.name} </td>
+                                <td> <span id="return" class="return" style="cursor:pointer;">Return</span></td>
+                            </tr>
+
+                        `;
+                });
+
+              
+
+
+                url = 'https://localhost:44330/api/car';
+                response = await fetch(url, {
+                    method: "GET",
+                });
+
+                if (!response.ok) {
+                    alert("invalid credentials");
+                    throw new Error("Invalid Credentials");
+                }
+                data = await response.json(); // read response body and parse as JSON
+
+                //console.log(data);
+                mycars = data;
+                mycars.forEach(car => {
+                    select1.innerHTML += `
+
+                            <option value=${car.name}>${car.name}</option>
+
+                        `;
+                });
+
+
+                const deletebuttons = document.querySelectorAll('#return');
+                console.log(deletebuttons);
+                console.log(mycars);
+
+                deletebuttons.forEach((button, index) => {
+                    button.addEventListener("click", async () => {
+                        console.log()
+                        try {
+                            let url = 'https://localhost:44330/api/car?userid=' + id + '&carId=' + rentedCars[index].Id;
+                            let response = await fetch(url, {
+                                method: "PUT",
+                            });
+
+                            if (!response.ok) {
+                                alert("Can not return car");
+                                throw new Error("Can not return car");
+                            }
+                            let data = await response.json(); // read response body and parse as JSON
+
+                            console.log(data);
+                            location.reload();
+                        }
+                        catch (err) { console.log(err); }
+
+                    });
+                });
+
+            }
+            catch (err) { console.log(err); }
+        }
+        )();
+
+
+
+        addcar.addEventListener("click", async () => {
+            try {
+                let url = 'https://localhost:44330/api/car?userid=' + id;
+                let response = await fetch(url, {
+                    method: "PUT",
+                    body: JSON.stringify({ email: id, name: select1.selectedOptions[0].value, Id: "" }),
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                if (!response.ok) {
+                    alert("Can not add car");
+                    throw new Error("Can not add car");
+                }
+                let data = await response.json(); // read response body and parse as JSON
+
+                mycars = data;
+                cars.innerHTML = `<tr>
+                        <th> id</th>
+                            <th>Name</th>
+                            <th></th>
+                    </tr >`;
+                mycars.forEach(car => {
+                    cars.innerHTML += `
+
+                            <tr>
+                                <td> ${car.Id} </td>
+                                <td> ${car.name} </td>
+                                <td> <span id="return" class="return" style="cursor:pointer;">Return</span></td>
+                            </tr>
+
+                        `;
+                });
+                     
+
+                location.reload();
+
+                //console.log(data);
+            }
+            catch (err) { console.log(err); }
+        });
+
+
+
+        logout.addEventListener("click", () => {
+            localStorage.clear();
+            window.location.assign("Login.html");
+        });
+
+
+
+    </script>
+
+</body>
+</html>
